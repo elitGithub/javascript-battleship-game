@@ -167,6 +167,11 @@ function startGame() {
   }
 
   addEventListenerToBlocks('computer', 'click', handleClick);
+  playerTurn = true;
+  turnDisplay.textContent = 'Your turn.';
+  infoDisplay.textContent = 'Please take a shot.';
+  startButton.disabled = true;
+  flipButton.disabled = true;
 }
 
 function addEventListenerToBlocks(user, event, callback) {
@@ -187,6 +192,11 @@ const computerSunkShips = [];
 function handleClick(e) {
   if (!gameOver) {
     if (e.target.classList.contains('taken')) {
+      if (e.target.classList.contains('boom') || e.target.classList.contains('empty')) {
+        infoDisplay.textContent = 'You can\'t fire into that square.';
+        setTimeout(() => infoDisplay.textContent = 'Please take a shot.', 1500)
+        return;
+      }
       e.target.classList.add('boom');
       infoDisplay.textContent = 'You hit the computer\'s ship!';
       let classes = Array.from(e.target.classList);
@@ -217,8 +227,7 @@ function computerGo() {
       const allBoardBlocks = document.querySelectorAll('#player div');
       // If the computer hits something that it already hit.
       if ((allBoardBlocks[randomGo].classList.contains('taken') &&
-          allBoardBlocks[randomGo].classList.contains('boom')) ||
-          allBoardBlocks[randomGo].classList.contains('empty')) {
+           allBoardBlocks[randomGo].classList.contains('boom'))) {
         computerGo();
         return;
       }
@@ -242,8 +251,8 @@ function computerGo() {
 
     setTimeout(() => {
       playerTurn = true;
-      turnDisplay.textContent = 'Your go.';
-      infoDisplay.textContent = 'Please take your go.';
+      turnDisplay.textContent = 'Your turn.';
+      infoDisplay.textContent = 'Please take a shot.';
       addEventListenerToBlocks('computer', 'click', handleClick);
     }, 6000);
   }
@@ -252,7 +261,17 @@ function computerGo() {
 function checkScore(user, userHits, userSunkShips) {
   function checkShip(shipName, shipLength) {
     if (userHits.filter(storedShipName => storedShipName === shipName).length === shipLength) {
-      infoDisplay.textContent = `You sunk the ${user}'s ${shipName}`;
+      if (user === 'player') {
+        playerHits = userHits.filter(storedShipName => storedShipName !== shipName);
+        infoDisplay.textContent = `You sunk the computer's ${ shipName }`;
+      }
+
+      if (user === 'computer') {
+        computerHits = userHits.filter(storedShipName => storedShipName !== shipName);
+        infoDisplay.textContent = `You sunk the player's ${ shipName }`;
+      }
+
+      userSunkShips.push(shipName);
     }
   }
 
@@ -264,4 +283,18 @@ function checkScore(user, userHits, userSunkShips) {
 
   console.log('playerHits', playerHits);
   console.log('playerSunkShips', playerSunkShips);
+
+  if (playerSunkShips.length === 5) {
+    infoDisplay.textContent = 'You sunk all the computer\'s ships! You won.';
+    startButton.disabled = false;
+    flipButton.disabled = false;
+    gameOver = true;
+  }
+
+  if (computerSunkShips.length === 5) {
+    infoDisplay.textContent = 'The computer has sunk all your ships! You lost.';
+    startButton.disabled = false;
+    flipButton.disabled = false;
+    gameOver = true;
+  }
 }
